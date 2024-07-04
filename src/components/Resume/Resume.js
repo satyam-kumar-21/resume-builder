@@ -252,104 +252,103 @@ const Resume = forwardRef((props, ref) => {
       >
         <div className={styles.sectionTitle}>{info.other?.sectionTitle}</div>
         <div className={styles.content}>
-          <p className={styles.overview}>{info?.other?.detail}</p>
+          <p className={styles.overview}>{info.other?.detail}</p>
         </div>
       </div>
     ),
   };
 
-  const swapSourceTarget = (source, target) => {
-    if (!source || !target) return;
-    const tempColumns = [[...columns[0]], [...columns[1]]];
+  useEffect(() => {
+    setColumns((prevColumns) => {
+      if (prevColumns[0].length === 0 && prevColumns[1].length === 0) {
+        const column1 = [];
+        const column2 = [];
+        let turn = true;
+        Object.keys(sectionDiv).forEach((key) => {
+          if (turn) {
+            column1.push(sectionDiv[key]);
+            turn = false;
+          } else {
+            column2.push(sectionDiv[key]);
+            turn = true;
+          }
+        });
+        return [column1, column2];
+      }
+      const sourceColIndex = prevColumns[0].filter(
+        (item) => item.key === source
+      ).length
+        ? 0
+        : 1;
+      const targetColIndex = prevColumns[0].filter(
+        (item) => item.key === target
+      ).length
+        ? 0
+        : 1;
 
-    let sourceRowIndex = tempColumns[0].findIndex((item) => item === source);
-    let sourceColumnIndex = 0;
-    if (sourceRowIndex < 0) {
-      sourceColumnIndex = 1;
-      sourceRowIndex = tempColumns[1].findIndex((item) => item === source);
+      const sourceCol = [...prevColumns[sourceColIndex]];
+      const targetCol = [...prevColumns[targetColIndex]];
+
+      const sourceIndex = sourceCol.findIndex((item) => item.key === source);
+      const targetIndex = targetCol.findIndex((item) => item.key === target);
+
+      const temp = sourceCol[sourceIndex];
+      sourceCol[sourceIndex] = targetCol[targetIndex];
+      targetCol[targetIndex] = temp;
+
+      if (sourceColIndex === targetColIndex) {
+        return sourceColIndex === 0
+          ? [sourceCol, prevColumns[1]]
+          : [prevColumns[0], sourceCol];
+      } else {
+        return sourceColIndex === 0 ? [sourceCol, targetCol] : [targetCol, sourceCol];
+      }
+    });
+  }, [source, target]);
+
+  useEffect(() => {
+    if (props.activeColor) {
+      const color = props.activeColor;
+      document.documentElement.style.setProperty("--color", color);
     }
-
-    let targetRowIndex = tempColumns[0].findIndex((item) => item === target);
-    let targetColumnIndex = 0;
-    if (targetRowIndex < 0) {
-      targetColumnIndex = 1;
-      targetRowIndex = tempColumns[1].findIndex((item) => item === target);
-    }
-
-    const tempSource = tempColumns[sourceColumnIndex][sourceRowIndex];
-    tempColumns[sourceColumnIndex][sourceRowIndex] =
-      tempColumns[targetColumnIndex][targetRowIndex];
-
-    tempColumns[targetColumnIndex][targetRowIndex] = tempSource;
-
-    setColumns(tempColumns);
-  };
-
-  useEffect(() => {
-    setColumns([
-      [sections.project, sections.education, sections.summary],
-      [sections.workExp, sections.achievement, sections.other],
-    ]);
-  }, []);
-
-  useEffect(() => {
-    swapSourceTarget(source, target);
-  }, [source]);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!props.activeColor || !container) return;
-
-    container.style.setProperty("--color", props.activeColor);
   }, [props.activeColor]);
 
   return (
-    <div ref={ref}>
-      <div ref={containerRef} className={styles.container}>
-        <div className={styles.header}>
-          <p className={styles.heading}>{info.basicInfo?.detail?.name}</p>
-          <p className={styles.subHeading}>{info.basicInfo?.detail?.title}</p>
-
-          <div className={styles.links}>
-            {info.basicInfo?.detail?.email ? (
-              <a className={styles.link} type="email">
-                <AtSign /> {info.basicInfo?.detail?.email}
-              </a>
-            ) : (
-              <span />
-            )}
-            {info.basicInfo?.detail?.phone ? (
-              <a className={styles.link}>
-                <Phone /> {info.basicInfo?.detail?.phone}
-              </a>
-            ) : (
-              <span />
-            )}
-            {info.basicInfo?.detail?.linkedin ? (
-              <a className={styles.link}>
-                <Linkedin /> {info.basicInfo?.detail?.linkedin}
-              </a>
-            ) : (
-              <span />
-            )}
-            {info.basicInfo?.detail?.github ? (
-              <a className={styles.link}>
-                <GitHub /> {info.basicInfo?.detail?.github}
-              </a>
-            ) : (
-              <span />
-            )}
-          </div>
+    <div ref={ref} className={styles.container}>
+      <div className={styles.header}>
+        <p className={styles.heading}>{info.basicInfo?.detail?.name}</p>
+        <p className={styles.subHeading}>{info.basicInfo?.detail?.title}</p>
+        <div className={styles.links}>
+          {info.basicInfo?.detail?.email && (
+            <a className={styles.link} href={`mailto:${info.basicInfo?.detail?.email}`}>
+              <AtSign /> {info.basicInfo?.detail?.email}
+            </a>
+          )}
+          {info.basicInfo?.detail?.phone && (
+            <a className={styles.link} href={`tel:${info.basicInfo?.detail?.phone}`}>
+              <Phone /> {info.basicInfo?.detail?.phone}
+            </a>
+          )}
+          {info.basicInfo?.detail?.linkedin && (
+            <a className={styles.link} href={info.basicInfo?.detail?.linkedin} target="_blank" rel="noopener noreferrer">
+              <Linkedin /> {info.basicInfo?.detail?.linkedin}
+            </a>
+          )}
+          {info.basicInfo?.detail?.github && (
+            <a className={styles.link} href={info.basicInfo?.detail?.github} target="_blank" rel="noopener noreferrer">
+              <GitHub /> {info.basicInfo?.detail?.github}
+            </a>
+          )}
+          {info.basicInfo?.detail?.location && (
+            <p className={styles.link}>
+              <MapPin /> {info.basicInfo?.detail?.location}
+            </p>
+          )}
         </div>
-
-        <div className={styles.main}>
-          <div className={styles.col1}>
-            {columns[0].map((item) => sectionDiv[item])}
-          </div>
-          <div className={styles.col2}>
-            {columns[1].map((item) => sectionDiv[item])}
-          </div>
-        </div>
+      </div>
+      <div className={styles.main}>
+        <div className={styles.col1}>{columns[0]}</div>
+        <div className={styles.col2}>{columns[1]}</div>
       </div>
     </div>
   );
